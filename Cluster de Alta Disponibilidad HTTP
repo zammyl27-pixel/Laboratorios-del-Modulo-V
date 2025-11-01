@@ -1,0 +1,75 @@
+Configuración de Clúster de Alta Disponibilidad HTTP con Keepalived
+
+1. Instalar NGINX y Keepalived en ambos servidores
+
+sudo dnf install nginx keepalived -y
+
+2. Crear página HTML personalizada en cada servidor
+
+En Server1:
+
+echo "<h1>Servidor 1</h1>" | sudo tee /usr/share/nginx/html/index.html
+
+En Server2:
+
+echo "<h1>Servidor 2</h1>" | sudo tee /usr/share/nginx/html/index.html
+
+3. Habilitar y arrancar NGINX
+
+sudo systemctl enable nginx --now
+
+4. Configurar Keepalived
+
+En Server1 (MASTER):
+
+sudo nano /etc/keepalived/keepalived.conf
+
+vrrp_instance VI_1 {
+    state MASTER
+    interface ens33
+    virtual_router_id 51
+    priority 100
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 1234
+    }
+    virtual_ipaddress {
+        192.168.100.100
+    }
+}
+
+En Server2 (BACKUP):
+
+sudo nano /etc/keepalived/keepalived.conf
+
+vrrp_instance VI_1 {
+    state BACKUP
+    interface ens33
+    virtual_router_id 51
+    priority 90
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 1234
+    }
+    virtual_ipaddress {
+        192.168.100.100
+    }
+}
+
+Asegúrate de reemplazar ens33 por el nombre correcto de tu interfaz de red.
+
+5. Habilitar y arrancar Keepalived
+
+sudo systemctl enable keepalived --now
+
+6. Validar Alta Disponibilidad
+
+Accede a http://192.168.100.100 desde un navegador.
+
+Apaga Server1:
+
+sudo poweroff
+
+Verifica que el servicio sigue disponible y muestra el contenido de Server2.
