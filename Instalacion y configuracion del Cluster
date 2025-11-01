@@ -1,0 +1,62 @@
+Instalar los paquetes necesarios
+
+En ambos nodos:
+
+dnf install -y pacemaker pcs fence-agents-all
+systemctl enable --now pcsd
+echo "clavecluster" | passwd --stdin hacluster
+systemctl enable --now corosync pacemaker
+
+Paso 2: Autenticación entre nodos
+
+Desde uno de los nodos (ej. nodo1):
+
+pcs host auth nodo1 nodo2 -u hacluster -p clavecluster
+
+Paso 3: Crear el clúster
+
+pcs cluster setup --name clusterHA nodo1 nodo2
+pcs cluster start --all
+pcs cluster enable --all
+
+Verifica el estado:
+
+pcs status
+
+Paso 4: Configurar el clúster
+
+Deshabilitar STONITH y permitir recursos sin quorum (solo para pruebas):
+
+pcs property set stonith-enabled=false
+pcs property set no-quorum-policy=ignore
+
+Paso 5: Crear recurso de IP flotante
+
+Ejemplo con IP flotante 192.168.100.100 en interfaz ens33:
+
+pcs resource create IPflotante ocf:heartbeat:IPaddr2 ip=192.168.100.100 cidr_netmask=24 nic=ens33 op monitor interval=30s
+
+Verifica:
+
+pcs status resources
+ip a | grep 192.168.100.100
+
+Paso 6: Pruebas de Alta Disponibilidad
+
+Desde una tercera máquina, hacer ping a la IP flotante:
+
+ping 192.168.100.100
+
+Reiniciar uno de los nodos:
+
+reboot
+
+Verificar que el ping no se interrumpe y que el recurso migró al nodo activo:
+
+pcs status
+
+Paso 7: Comprobación de logs (opcional)
+
+journalctl -xe
+pcs resource show
+pcs cluster status
