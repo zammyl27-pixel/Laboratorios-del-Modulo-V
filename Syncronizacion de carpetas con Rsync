@@ -1,0 +1,42 @@
+Comandos para sincronización de carpetas con rsync
+
+1. Crear carpeta y archivos en el servidor primario
+
+mkdir -p /home/usuario/sync_folder
+cd /home/usuario/sync_folder
+touch archivo{001..100}.txt
+
+2. Sincronizar carpeta al servidor secundario con rsync
+
+rsync -avz /home/usuario/sync_folder/ usuario@IP_REMOTA:/home/usuario/sync_folder/
+
+3. Crear script de sincronización
+
+nano /home/usuario/sync_rsync.sh
+
+Contenido del script:
+
+#!/bin/bash
+rsync -avz /home/usuario/sync_folder/ usuario@IP_REMOTA:/home/usuario/sync_folder/
+
+Dar permisos de ejecución:
+
+chmod +x /home/usuario/sync_rsync.sh
+
+4. Programar sincronización cada minuto con crontab
+
+crontab -e
+
+Agregar esta línea:
+
+* * * * * /home/usuario/sync_rsync.sh
+
+5. Validar que el crontab funciona
+
+En el servidor primario:
+
+touch /home/usuario/sync_folder/archivo101.txt
+
+En el servidor secundario:
+
+ls /home/usuario/sync_folder/
